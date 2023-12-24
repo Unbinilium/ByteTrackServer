@@ -1,0 +1,4 @@
+supervison
+opencv-python
+numpy
+scipy
