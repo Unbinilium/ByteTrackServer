@@ -40,12 +40,6 @@ def from_sscma_detection(cls: Detections, detection: dict) -> Detections:
     except Exception as exc:
         logging.warning('Failed to convert boxes to numpy array')
         raise ValueError from exc
-    if len(boxes.shape) != 2:
-        logging.warning('Boxes should be 2D array')
-        raise ValueError
-    if boxes.shape[1] != 6:
-        logging.warning('Boxes should have 6 columns')
-        raise ValueError
 
     CONFIDENCE = 4
     CLASS_ID = 5
