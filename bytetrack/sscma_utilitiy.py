@@ -36,8 +36,8 @@ def cxcywh_to_xyxy(cxcywh: np.ndarray) -> np.ndarray:
 
 def xyxy_to_cxcywh(xyxy: np.ndarray) -> np.ndarray:
     cxcywh = np.asarray(xyxy[:4])
-    cxcywh[0:2] = cxcywh[0:2] + (cxcywh[2:4] / 2.0)
     cxcywh[2:4] = cxcywh[2:4] - cxcywh[0:2]
+    cxcywh[0:2] = cxcywh[0:2] + (cxcywh[2:4] / 2.0)
     return cxcywh
 
 @classmethod
