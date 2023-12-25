@@ -11,9 +11,11 @@ from supervision import Detections
 def parse_bytes_to_json(request: bytes) -> dict:
     try:
         request_json = json.loads(request)
+        if isinstance(request_json, dict):
+            raise ValueError
         return request_json
     except Exception as exc:
-        logging.warning('Failed to parse request to json')
+        logging.warning('Failed to parse request to json to dict')
         raise ValueError from exc
 
 def xywh_to_xyxy(xywh: list) -> list:
