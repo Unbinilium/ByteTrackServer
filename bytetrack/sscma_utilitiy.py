@@ -11,7 +11,7 @@ from supervision import Detections
 def parse_bytes_to_json(request: bytes) -> dict:
     try:
         request_json = json.loads(request)
-        if isinstance(request_json, dict):
+        if not isinstance(request_json, dict):
             raise ValueError
         return request_json
     except Exception as exc:
