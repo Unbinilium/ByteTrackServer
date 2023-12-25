@@ -6,14 +6,17 @@ import logging
 import threading
 
 import socketserver
-from http import HTTPStatus, server
+import http
+from http import HTTPStatus
 
 from bytetrack.session_manager import SessionManager
 from bytetrack.sscma_utilitiy import parse_bytes_to_json
 
+
 shared_session_manager = SessionManager()
 
-class Handler(server.SimpleHTTPRequestHandler):
+
+class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, request: bytes, client_address: Tuple[str, int], server: socketserver.BaseServer):
         super().__init__(request, client_address, server)
 

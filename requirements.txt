@@ -1,4 +1,4 @@
-supervison
+supervision
 opencv-python
 numpy
 scipy

@@ -4,9 +4,13 @@ from threading import Lock
 
 from supervision import Detections, ByteTrack, BoundingBoxAnnotator, LabelAnnotator
 
-from bytetrack.sscma_utilitiy import from_sscma_detection, detection_to_tracked_bboxs, image_from_base64, image_to_base64_jpeg
+from bytetrack.sscma_utilitiy import (from_sscma_detection,
+                                      detection_to_tracked_bboxs,
+                                      image_from_base64,
+                                      image_to_base64_jpeg)
 
 Detections.from_sscma_detection = from_sscma_detection
+
 
 class TrackerWrapper:
     def __init__(self):

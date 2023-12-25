@@ -4,14 +4,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 from bytetrack.service_handler import Handler
 
-class PooledMixIn(ThreadingMixIn):
-    def process_request(self, request, client_address):
-        self.pool.submit(self.process_request_thread, request, client_address)
 
-class PooledHTTPServer(PooledMixIn, HTTPServer):
+class PooledHTTPServer(ThreadingMixIn, HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True, max_workers=4):
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
         self.pool = ThreadPoolExecutor(max_workers=max_workers)
+
+    def process_request(self, request, client_address):
+        self.pool.submit(self.process_request_thread, request, client_address)
 
 class ByteTrackServer():
     def __init__(self, host: str, port: int, ssl: bool, ssl_certfile: str, ssl_keyfile: str, max_workers: int):

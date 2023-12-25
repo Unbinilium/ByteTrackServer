@@ -7,13 +7,14 @@ import cv2
 
 from supervision import Detections
 
+
 def parse_bytes_to_json(request: bytes) -> dict:
     try:
         request_json = json.loads(request)
         return request_json
-    except json.JSONDecodeError:
+    except Exception as exc:
         logging.warning('Failed to parse request to json')
-        raise ValueError
+        raise ValueError from exc
 
 def xywh_to_xyxy(xywh: list) -> list:
     xyxy = xywh[:4]
@@ -28,7 +29,7 @@ def xyxy_to_xywh(xyxy: list) -> list:
     return xywh
 
 @classmethod
-def from_sscma_detection(cls, detection: dict) -> Detections:
+def from_sscma_detection(cls: Detections, detection: dict) -> Detections:
     if not 'boxes' in detection:
         logging.warning('Failed to parse json')
         raise ValueError
@@ -36,9 +37,9 @@ def from_sscma_detection(cls, detection: dict) -> Detections:
 
     try:
         boxes = np.array(boxes)
-    except ValueError:
+    except Exception as exc:
         logging.warning('Failed to convert boxes to numpy array')
-        raise ValueError
+        raise ValueError from exc
     if len(boxes.shape) != 2:
         logging.warning('Boxes should be 2D array')
         raise ValueError
@@ -59,9 +60,7 @@ def from_sscma_detection(cls, detection: dict) -> Detections:
     return cls(
         xyxy=np.asarray(xyxys),
         confidence=np.asarray(confidences),
-        class_id=np.asarray(class_ids).astype(int),
-        mask=None,
-        tracker_id=None
+        class_id=np.asarray(class_ids).astype(int)
     )
 
 def detection_to_tracked_bboxs(detection: Detections) -> list:
@@ -76,11 +75,12 @@ def image_from_base64(base64_image: str) -> np.ndarray:
     try:
         decoded = base64.b64decode(base64_image)
         image = np.frombuffer(decoded, dtype=np.uint8)
+        if len(image) < 1:
+            raise ValueError
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-
-    except ValueError:
+    except Exception as exc:
         logging.warning('Failed to convert base64 to jpeg')
-        raise ValueError
+        raise ValueError from exc
     return image
 
 def image_to_base64_jpeg(image: np.ndarray) -> str:
