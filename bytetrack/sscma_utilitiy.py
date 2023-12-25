@@ -28,6 +28,22 @@ def xyxy_to_xywh(xyxy: list) -> list:
     xywh[3] = xywh[3] - xywh[1]
     return xywh
 
+def cxcywh_to_xyxy(cxcywh: list) -> list:
+    xyxy = cxcywh[:4]
+    xyxy[0] = xyxy[0] - xyxy[2] / 2
+    xyxy[1] = xyxy[1] - xyxy[3] / 2
+    xyxy[2] = xyxy[0] + xyxy[2]
+    xyxy[3] = xyxy[1] + xyxy[3]
+    return xyxy
+
+def xyxy_to_cxcywh(xyxy: list) -> list:
+    cxcywh = xyxy[:4]
+    cxcywh[2] = cxcywh[2] - cxcywh[0]
+    cxcywh[3] = cxcywh[3] - cxcywh[1]
+    cxcywh[0] = cxcywh[0] + cxcywh[2] / 2
+    cxcywh[1] = cxcywh[1] + cxcywh[3] / 2
+    return cxcywh
+
 @classmethod
 def from_sscma_detection(cls: Detections, detection: dict) -> Detections:
     if not 'boxes' in detection:
@@ -47,7 +63,7 @@ def from_sscma_detection(cls: Detections, detection: dict) -> Detections:
     confidences = []
     class_ids = []
     for box in boxes:
-        xyxys.append(xywh_to_xyxy(box))
+        xyxys.append(cxcywh_to_xyxy(box))
         confidences.append(box[CONFIDENCE] / 100.0)
         class_ids.append(box[CLASS_ID])
 
@@ -62,7 +78,7 @@ def detection_to_tracked_bboxs(detection: Detections) -> list:
     confidences = np.round(detection.confidence * 100.0).astype(int).tolist()
     class_ids = detection.class_id.astype(int).tolist()
     tracker_ids = detection.tracker_id.tolist()
-    return [[*xyxy_to_xywh(xyxy), conf, class_id, tracker_id]
+    return [[*xyxy_to_cxcywh(xyxy), conf, class_id, tracker_id]
              for xyxy, conf, class_id, tracker_id in zip(xyxys, confidences, class_ids, tracker_ids)]
 
 def image_from_base64(base64_image: str) -> np.ndarray:
