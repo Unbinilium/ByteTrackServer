@@ -12,7 +12,12 @@ def main():
     parser.add_argument("--max_workers", type=int, default=4)
     args = parser.parse_args()
 
-    server = ByteTrackServer(args.host, args.port, args.ssl, args.ssl_certfile, args.ssl_keyfile, args.max_workers)
+    server = ByteTrackServer(args.host,
+                             args.port,
+                             args.ssl,
+                             args.ssl_certfile,
+                             args.ssl_keyfile,
+                             args.max_workers)
     server.start()
 
 if __name__ == "__main__":

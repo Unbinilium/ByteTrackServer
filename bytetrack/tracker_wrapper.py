@@ -2,14 +2,22 @@ import time
 import logging
 from threading import Lock
 
-from supervision import Detections, ByteTrack, BoundingBoxAnnotator, LabelAnnotator, TraceAnnotator
+from supervision import (
+    Detections,
+    ByteTrack,
+    BoundingBoxAnnotator,
+    LabelAnnotator,
+    TraceAnnotator,
+)
 
-from bytetrack.sscma_utilitiy import (from_sscma_detection,
-                                      detection_to_tracked_bboxs,
-                                      image_from_base64,
-                                      image_to_base64_jpeg)
+from bytetrack.utilitiy import (
+    from_post_detection,
+    detection_to_tracked_bboxs,
+    image_from_base64,
+    image_to_base64_jpeg,
+)
 
-Detections.from_sscma_detection = from_sscma_detection
+Detections.from_post_detection = from_post_detection
 
 
 class TrackerWrapper:
@@ -26,35 +34,37 @@ class TrackerWrapper:
         tracker_perf = list()
         try:
             start = time.time()
-            detections = Detections.from_sscma_detection(requset)
+            detections = Detections.from_post_detection(requset)
             detections = self.tracker.update_with_detections(detections)
             tracker_perf.append(round(time.time() - start, 3))
-            result['tracked_boxes'] = detection_to_tracked_bboxs(detections)
-            if 'image' in requset.keys():
+            result["tracked_boxes"] = detection_to_tracked_bboxs(detections)
+            if "image" in requset.keys():
                 try:
                     start = time.time()
-                    image = image_from_base64(requset['image'])
+                    image = image_from_base64(requset["image"])
                     labels = [
                         f"#{tracker_id} {class_id}"
-                        for class_id, tracker_id
-                        in zip(detections.class_id, detections.tracker_id)
+                        for class_id, tracker_id in zip(
+                            detections.class_id, detections.tracker_id
+                        )
                     ]
                     annotated_image = self.box_annotator.annotate(
-                        scene=image.copy(),
-                        detections=detections)
+                        scene=image.copy(), detections=detections
+                    )
                     annotated_labeled_image = self.label_annotator.annotate(
-                        scene=annotated_image,
-                        detections=detections,
-                        labels=labels)
+                        scene=annotated_image, detections=detections, labels=labels
+                    )
                     traced_annotated_labeled_image = self.trace_annotator.annotate(
-                        annotated_labeled_image,
-                        detections=detections)
+                        annotated_labeled_image, detections=detections
+                    )
                     tracker_perf.append(round(time.time() - start, 3))
-                    result['annotated_image'] = image_to_base64_jpeg(traced_annotated_labeled_image)
-                except ValueError:
-                    logging.warning('Failed to annotate image')
-        except ValueError:
-            logging.warning('Failed to track detections')
-        result['tracker_perf'] = tracker_perf
+                    result["annotated_image"] = image_to_base64_jpeg(
+                        traced_annotated_labeled_image
+                    )
+                except Exception as exc:  # pylint: disable=broad-except
+                    logging.warning("Failed to annotate image", exc_info=exc)
+        except Exception as exc:  # pylint: disable=broad-except
+            logging.warning("Failed to track detections", exc_info=exc)
+        result["tracker_perf"] = tracker_perf
         self.lock.release()
         return result

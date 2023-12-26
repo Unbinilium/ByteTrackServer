@@ -10,7 +10,7 @@ class SessionManager:
 
     def get_sessions(self):
         with self.sessions_lock:
-           return [str(key) for key in self.sessions]
+            return [str(key) for key in self.sessions]
 
     def get_session(self, session_id: str):
         with self.sessions_lock:
