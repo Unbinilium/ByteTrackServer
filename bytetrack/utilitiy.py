@@ -1,12 +1,47 @@
-from typing import List
+from typing import Tuple, Dict, List
 
 import json
 import base64
+
+from dataclasses import dataclass
 
 import numpy as np
 import cv2
 
 from supervision import Detections
+
+
+@dataclass
+class TrackerConfig:
+    track_thresh: float
+    track_buffer: int
+    match_thresh: float
+    frame_rate: int
+
+
+@dataclass
+class TraceConfig:
+    trace_length: int
+
+
+@dataclass
+class AnnotationConfig:
+    label_names: Dict[str, str]
+
+
+@dataclass
+class FilterRegions:
+    polygon: List[Tuple[int, int]]
+    triggering_position: Tuple[int, int]
+
+
+@dataclass
+class SessionConfig:
+    resolution: Tuple[int, int]
+    tracker_config: TrackerConfig
+    trace_config: TraceConfig
+    annotation_config: AnnotationConfig
+    filter_regions: Dict[str, FilterRegions]
 
 
 def parse_bytes_to_json(request: bytes) -> dict:
@@ -97,24 +132,9 @@ def image_from_base64(base64_image: str) -> np.ndarray:
     return image
 
 
-def image_to_base64_jpeg(image: np.ndarray) -> str:
-    ret, jpeg = cv2.imencode(".jpg", image)
+def image_to_base64(image: np.ndarray, suffix: str = ".png") -> str:
+    ret, img_bin = cv2.imencode(suffix, image)
     if not ret:
         raise ValueError("Failed to encode image to base64")
-    base64_image = base64.b64encode(jpeg).decode("utf-8")
+    base64_image = base64.b64encode(img_bin).decode("utf-8")
     return base64_image
-
-
-def polygons_to_mask(polygons: List[np.ndarray], mask_value: np.uint8 = 1) -> np.ndarray:
-    max_x, max_y = 0, 0
-    for polygon in polygons:
-        polygon = np.asarray(polygon)
-        if len(polygon.shape) != 2:
-            raise ValueError("Dimension of polygon should be 2")
-        if polygon.shape[1] != 2:
-            raise ValueError("Shape of polygon should be (N, 2)")
-        max_x, max_y = max([max_x, max_y], np.max(polygon[:, 0:2]))
-    mask = np.zeros((max_y, max_x), dtype=np.uint8)
-    for polygon in polygons:
-        mask = cv2.fillPoly(mask, [polygon], mask_value)
-    return mask

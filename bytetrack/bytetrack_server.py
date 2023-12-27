@@ -9,7 +9,7 @@ from bytetrack.service_handler import Handler
 
 class PooledHTTPServer(ThreadingMixIn, HTTPServer):
     def __init__(
-        self, server_address, RequestHandlerClass, bind_and_activate=True, max_workers=4
+        self, server_address, RequestHandlerClass, max_workers, bind_and_activate=True
     ):
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
         self.pool = ThreadPoolExecutor(max_workers=max_workers)

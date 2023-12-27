@@ -1,8 +1,7 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import time
 import json
-import logging
 import threading
 
 import socketserver
@@ -10,7 +9,7 @@ import http
 from http import HTTPStatus
 
 from bytetrack.session_manager import SessionManager
-from bytetrack.utilitiy import parse_bytes_to_json
+from bytetrack.utilitiy import parse_bytes_to_json, SessionConfig
 
 
 shared_session_manager = SessionManager()
@@ -25,27 +24,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     ):
         super().__init__(request, client_address, server)
 
-    def verify_path(self):
-        if not self.path == "/":
-            self.send_response(HTTPStatus.NOT_FOUND)
-            self.end_headers()
-            return False
-        return True
-
     def verify_content_type(self):
         if not self.headers["Content-Type"] == "application/json":
             self.send_response(HTTPStatus.NOT_ACCEPTABLE)
-            self.end_headers()
-            return False
-        return True
-
-    def verify_session_id(self):
-        if not "Session-Id" in self.headers:
-            self.send_response(HTTPStatus.BAD_REQUEST)
-            self.end_headers()
-            return False
-        if len(self.headers["Session-Id"]) < 1:
-            self.send_response(HTTPStatus.BAD_REQUEST)
             self.end_headers()
             return False
         return True
@@ -59,34 +40,42 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     @property
     def api_response(self):
-        logging.info(self.headers)
-        response = dict()
-        response["sessions"] = shared_session_manager.get_sessions()
+        response = {}
+        response["sessions"] = shared_session_manager.get_all_sessions_id()
         response["active_threads"] = threading.active_count()
+        response["status"] = "OK"
+        response["message"] = ""
         response["timestamp"] = time.time()
         return json.dumps(response).encode()
 
     def do_GET(self):
-        if not (self.verify_path()):
+        if self.path != "/":
+            self.send_response(HTTPStatus.NOT_FOUND)
+            self.end_headers()
             return
+
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
+
         self.wfile.write(bytes(self.api_response))
         self.wfile.flush()
 
     def do_POST(self):
-        if not (
-            self.verify_path()
-            and self.verify_content_type()
-            and self.verify_session_id()
-            and self.verify_content_length()
-        ):
+        if not (self.verify_content_type() and self.verify_content_length()):
             return
+
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
         try:
             post_json = parse_bytes_to_json(post_data)
+            if (self.path == "/"):
+                session_config = SessionConfig(**post_json)
+                session_id = shared_session_manager.create_session(session_config)
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Session-Id", session.session_id)
+                self.end_headers()
+                return
             session = shared_session_manager.get_session(self.headers["Session-Id"])
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
