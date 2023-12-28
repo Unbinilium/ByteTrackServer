@@ -4,8 +4,6 @@ from threading import Lock
 import numpy as np
 
 from supervision import (
-    Position,
-    Detections,
     ByteTrack,
     BoundingBoxAnnotator,
     LabelAnnotator,
@@ -17,12 +15,9 @@ from supervision import (
 
 from bytetrack.utilitiy import (
     SessionConfig,
-    from_post_detection,
     detection_to_tracked_bboxs,
     image_to_base64,
 )
-
-Detections.from_post_detection = from_post_detection
 
 
 class TrackerWrapper:
@@ -36,32 +31,44 @@ class TrackerWrapper:
             match_thresh=tracker_config.match_thresh,
             frame_rate=tracker_config.frame_rate,
         )
-        self.box_annotator = BoundingBoxAnnotator()
-        self.label_annotator = LabelAnnotator()
-        self.label_names = config.annotation_config.label_names
+        annotation_config = config.annotation_config
+        self.box_annotator = BoundingBoxAnnotator(
+            thickness=annotation_config.bbox_thickness
+        )
+        self.label_annotator = LabelAnnotator(
+            text_scale=annotation_config.bbox_text_scale,
+            text_padding=annotation_config.bbox_text_padding,
+        )
+        self.labels = config.annotation_config.labels
         self.trace_annotator = TraceAnnotator(
-            trace_length=config.trace_config.trace_length
+            position=config.trace_config.trace_position,
+            trace_length=config.trace_config.trace_length,
+            thickness=annotation_config.trace_line_thickness,
         )
         zone_overlay = np.zeros((*self.canva_shape, 4), dtype=np.uint8)
+        color_platte = ColorPalette.default()
         self.filter_regions = {}
         for i, (region_name, region_config) in enumerate(config.filter_regions.items()):
             zone = PolygonZone(
-                polygon=np.asarray(region_config.polygon),
+                polygon=region_config.polygon,
                 frame_resolution_wh=self.canva_shape,
-                triggering_position=Position(region_config.triggering_position),
+                triggering_position=region_config.triggering_position,
             )
             zone_overlay = PolygonZoneAnnotator(
-                zone, ColorPalette.default().by_idx(i)
+                zone,
+                color_platte.by_idx(i + 10),
+                thickness=annotation_config.polygon_thickness,
+                text_scale=annotation_config.polygon_text_scale,
+                text_padding=annotation_config.polygon_text_padding,
             ).annotate(scene=zone_overlay, label=region_name)
             self.filter_regions[region_name] = zone
         self.backgorund = zone_overlay
 
-    def track_with_detections(self, requset: dict) -> dict:
+    def track_with_detections(self, detections: dict) -> dict:
         with self.lock:
             result = {}
             result["filtered_regions"] = {}
             try:
-                detections = Detections.from_post_detection(requset)
                 detections = self.tracker.update_with_detections(detections)
                 result["tracked_boxes"] = detection_to_tracked_bboxs(detections)
 
@@ -78,7 +85,7 @@ class TrackerWrapper:
                     scene=annotated_image,
                     detections=detections,
                     labels=[
-                        f"#{tracker_id} {self.label_names[class_id] if str(class_id) in self.label_names else str(class_id)}"
+                        f"#{tracker_id} {self.labels[class_id] if class_id in self.labels else class_id}"
                         for class_id, tracker_id in zip(
                             detections.class_id, detections.tracker_id
                         )
@@ -87,6 +94,9 @@ class TrackerWrapper:
                 traced_annotated_labeled_image = self.trace_annotator.annotate(
                     annotated_labeled_image, detections=detections
                 )
+                traced_annotated_labeled_image[
+                    np.any(traced_annotated_labeled_image[:, :, :3] != 0, axis=-1), 3
+                ] = 255
                 result["annotated_image_mask"] = image_to_base64(
                     traced_annotated_labeled_image
                 )

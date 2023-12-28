@@ -43,10 +43,8 @@ Response:
 ```json
 {
     "sessions": [],
-    "active_threads": 2,
-    "status": "OK",
-    "message": "Success",
-    "timestamp": 1703406577.116568
+    "max_sessions": 32,
+    "active_threads": 2
 }
 ```
 
@@ -56,7 +54,8 @@ Request:
 
 ```sh
 curl -X POST http://127.0.0.1:8000 \
-    -H "Content-Type: application/json"
+    -H "Content-Type: application/json" \
+    -H "Session-Id: 72d6be50" \
     --data-binary @body.json
 ```
 
@@ -72,22 +71,30 @@ Request body:
         "frame_rate": 30
     },
     "trace_config": {
+        "trace_position": "CENTER",
         "trace_length": 30
     },
     "annotation_config": {
-        "label_names": {
+        "labels": {
             "0": "Person",
             "1": "Car",
             "2": "Bicycle",
             "3": "Motorcycle",
             "4": "Bus",
             "5": "Truck"
-        }
+        },
+        "bbox_thickness": 2,
+        "bbox_text_scale": 0.4,
+        "bbox_text_padding": 5,
+        "polygon_thickness": 1,
+        "polygon_text_scale": 0.3,
+        "polygon_text_padding": 5,
+        "trace_line_thickness": 2
     },
     "filter_regions": {
         "Region A": {
             "polygon": [[12, 34], [56, 78], [90, 12], [34, 56]],
-            "triggering_position": "CENTER_OF_MASS"
+            "triggering_position": "CENTER"
         },
         "Region B": {
             "polygon": [[10, 10], [200, 10], [200,200], [10, 200], [30, 30]],
@@ -97,16 +104,6 @@ Request body:
 }
 ```
 
-Response:
-
-```json
-{
-    "session_id": "72d6be50",
-    "status": "OK",
-    "message": "Success",
-    "timestamp": 1703406577.116568
-}
-```
 
 ### POST
 
@@ -115,7 +112,7 @@ Response:
 Request:
 
 ```sh
-curl -X POST http://127.0.0.1:8000/session \
+curl -X POST http://127.0.0.1:8000/72d6be50 \
     -H "Content-Type: application/json" \
     --data-binary @body.json
 ```
@@ -124,7 +121,6 @@ Request body:
 
 ```json
 {
-    "session_id": "72d6be50",
     "boxes": [
         [20, 23, 12, 24, 89, 0], [12, 34, 45, 56, 78, 1]
     ]
@@ -140,13 +136,10 @@ Response:
         [12, 34, 45, 56, 78, 1, 2]
     ],
     "filtered_regions": {
-        "Region A": [1],
-        "Region B": [1, 2]
+        "Region A": [],
+        "Region B": [2]
     },
-    "annotated_image_mask": "data:image/png;base64,...",
-    "status": "OK",
-    "message": "Success",
-    "timestamp": 1703413614.3132002
+    "annotated_image_mask": "data:image/png;base64,..."
 }
 ```
 
@@ -157,35 +150,7 @@ Response:
 Request:
 
 ```sh
-curl -X DELETE http://127.0.0.1:8000/session \
+curl -X DELETE http://127.0.0.1:8000 \
     -H "Content-Type: application/json" \
-    --d "{ \"session_id\": \"72d6be50\" }"
-```
-
-Response:
-
-```json
-{
-    "status": "OK",
-    "message": "Success",
-    "timestamp": 1703414872.097493
-}
-```
-
-#### Remove all active sessions
-
-Request:
-
-```sh
-curl -X DELETE http://127.0.0.1:8000
-```
-
-Response:
-
-```json
-{
-    "status": "OK",
-    "message": "Success",
-    "timestamp": 1703414872.097493
-}
+    -H "Session-Id: 72d6be50"
 ```

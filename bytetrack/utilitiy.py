@@ -1,47 +1,82 @@
-from typing import Tuple, Dict, List
+from typing import Tuple, Union, Dict
 
 import json
 import base64
+
 
 from dataclasses import dataclass
 
 import numpy as np
 import cv2
 
-from supervision import Detections
+from supervision import Detections, Position
 
 
 @dataclass
 class TrackerConfig:
-    track_thresh: float
-    track_buffer: int
-    match_thresh: float
-    frame_rate: int
+    track_thresh: float = 0.25
+    track_buffer: int = 30
+    match_thresh: float = 0.5
+    frame_rate: int = 15
 
 
 @dataclass
 class TraceConfig:
-    trace_length: int
+    trace_position: Position = Position.CENTER
+    trace_length: int = 30
+
+    def __post_init__(self):
+        self.trace_position = Position(self.trace_position)
 
 
 @dataclass
 class AnnotationConfig:
-    label_names: Dict[str, str]
+    labels: Union[Dict[int, str], Dict]
+    bbox_thickness: int = 2
+    bbox_text_scale: float = 0.4
+    bbox_text_padding: int = 5
+    polygon_thickness: int = 1
+    polygon_text_scale: float = 0.3
+    polygon_text_padding: int = 5
+    trace_line_thickness: int = 2
+
+    def __post_init__(self):
+        labels = {}
+        for key, value in self.labels.items():
+            labels[int(key)] = str(value)
+        self.labels = labels
 
 
 @dataclass
-class FilterRegions:
-    polygon: List[Tuple[int, int]]
-    triggering_position: Tuple[int, int]
+class FilterRegion:
+    polygon: np.ndarray
+    triggering_position: Position = Position.CENTER
+
+    def __post_init__(self):
+        self.polygon = np.asarray(self.polygon)
+        self.triggering_position = Position(self.triggering_position)
 
 
 @dataclass
 class SessionConfig:
     resolution: Tuple[int, int]
-    tracker_config: TrackerConfig
-    trace_config: TraceConfig
-    annotation_config: AnnotationConfig
-    filter_regions: Dict[str, FilterRegions]
+    tracker_config: Union[TrackerConfig, Dict]
+    trace_config: Union[TraceConfig, Dict]
+    annotation_config: Union[AnnotationConfig, Dict]
+    filter_regions: Dict[str, FilterRegion]
+
+    def __post_init__(self):
+        if len(self.resolution) != 2:
+            raise ValueError("Resolution should have 2 elements")
+        if self.resolution[0] < 64 or self.resolution[1] < 64:
+            raise ValueError("Resolutions should be greater than 64")
+        self.tracker_config = TrackerConfig(**self.tracker_config)
+        self.trace_config = TraceConfig(**self.trace_config)
+        self.annotation_config = AnnotationConfig(**self.annotation_config)
+        self.filter_regions = {
+            region_name: FilterRegion(**region_config)
+            for region_name, region_config in self.filter_regions.items()
+        }
 
 
 def parse_bytes_to_json(request: bytes) -> dict:

@@ -1,7 +1,5 @@
 from threading import Lock
 
-import secrets
-
 from bytetrack.tracker_wrapper import TrackerWrapper
 from bytetrack.utilitiy import SessionConfig
 
@@ -12,16 +10,17 @@ class SessionManager:
         self.sessions = {}
         self.max_sessions = max_sessions
 
-    def create_session(self, session_config: SessionConfig):
+    def get_sessions_limit(self):
+        return self.max_sessions
+
+    def create_session(self, session_id: str, session_config: SessionConfig):
         with self.sessions_lock:
             if len(self.sessions) >= self.max_sessions:
-                raise ResourceWarning(f"Max sessions exceeded the limit of {self.max_sessions}")
-            new_id = secrets.token_hex(4)
-            while new_id in self.sessions:
-                new_id = secrets.token_hex(4)
+                raise ResourceWarning(
+                    f"Max sessions exceeded the limit of {self.max_sessions}"
+                )
             new_session = TrackerWrapper(session_config)
-            self.sessions[new_id] = new_session
-        return new_id
+            self.sessions[session_id] = new_session
 
     def get_session(self, session_id: str):
         with self.sessions_lock:
