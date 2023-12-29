@@ -117,7 +117,7 @@ def xyxy_to_cxcywh(xyxy: np.ndarray) -> np.ndarray:
 
 @classmethod
 def from_post_detection(cls: Detections, detection: dict) -> Detections:
-    if not "boxes" in detection:
+    if "boxes" not in detection:
         raise ValueError("No boxes in detection")
     boxes = detection["boxes"]  # [x,y,w,h,conf,class_id]
     boxes = np.asarray(boxes)

@@ -2,6 +2,7 @@ import logging
 from threading import Lock
 
 import numpy as np
+import cv2
 
 from supervision import (
     ByteTrack,
@@ -64,7 +65,7 @@ class TrackerWrapper:
             self.filter_regions[region_name] = zone
         self.backgorund = zone_overlay
 
-    def track_with_detections(self, detections: dict) -> dict:
+    def track_with_detections(self, detections: dict, image: np.ndarray = None) -> dict:
         with self.lock:
             result = {}
             result["filtered_regions"] = {}
@@ -94,10 +95,21 @@ class TrackerWrapper:
                 traced_annotated_labeled_image = self.trace_annotator.annotate(
                     annotated_labeled_image, detections=detections
                 )
-                traced_annotated_labeled_image[
-                    np.any(traced_annotated_labeled_image[:, :, :3] != 0, axis=-1), 3
-                ] = 255
-                result["annotated_image_mask"] = image_to_base64(
+                if image is not None:
+                    w, h, c = image.shape[:3]
+                    if c == 1:
+                        traced_annotated_labeled_image = cv2.cvtColor(
+                            traced_annotated_labeled_image, cv2.COLOR_RGBA2GRAY
+                        )
+                    traced_annotated_labeled_image = cv2.add(
+                        image, traced_annotated_labeled_image[:w, :h, :c]
+                    )
+                else:
+                    traced_annotated_labeled_image[
+                        np.any(traced_annotated_labeled_image[:, :, :3] != 0, axis=-1),
+                        3,
+                    ] = 255
+                result["annotated_image"] = image_to_base64(
                     traced_annotated_labeled_image
                 )
             except Exception as exc:  # pylint: disable=broad-except

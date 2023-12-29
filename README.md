@@ -104,6 +104,13 @@ Request body:
 }
 ```
 
+- `trace_position` can be `CENTER`, `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`.
+-
+- `filter_regions` is a dictionary of regions (can be empty), each region is a dictionary of `polygon` and `triggering_position`.
+-
+- `polygon` is a list of points, each point is a list of `[x, y]`.
+-
+- `triggering_position` can be `CENTER`, `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`.
 
 ### POST
 
@@ -123,9 +130,14 @@ Request body:
 {
     "boxes": [
         [20, 23, 12, 24, 89, 0], [12, 34, 45, 56, 78, 1]
-    ]
+    ],
+    "image": "data:image/any;base64,..."
 }
 ```
+
+- `boxes` is a list of bounding boxes, each box is a list of `[cx, cy, w, h, score, label]`.
+
+- `image` is optional, if not provided or failed to decode from base64 string, the server will return the annotated image as transparent mask in the response.
 
 Response:
 
@@ -139,9 +151,14 @@ Response:
         "Region A": [],
         "Region B": [2]
     },
-    "annotated_image_mask": "data:image/png;base64,..."
+    "annotated_image": "data:image/png;base64,..."
 }
 ```
+
+- `tracked_boxes` is a list of tracked bounding boxes, each box is a list of `[cx, cy, w, h, score, label, tracker_id]`.
+- `filtered_regions` is a dictionary of filtered regions, each region is a list of tracker IDs which bounding boxes inside the region.
+- `annotated_image` is base64 encoded annotated image, PNG format.
+
 
 ### DELETE
 

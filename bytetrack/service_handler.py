@@ -11,7 +11,12 @@ from http import HTTPStatus
 from supervision import Detections
 
 from bytetrack.session_manager import SessionManager
-from bytetrack.utilitiy import parse_bytes_to_json, SessionConfig, from_post_detection
+from bytetrack.utilitiy import (
+    parse_bytes_to_json,
+    SessionConfig,
+    from_post_detection,
+    image_from_base64,
+)
 
 
 Detections.from_post_detection = from_post_detection
@@ -92,7 +97,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 session_id = self.path[1:]
                 session = shared_session_manager.get_session(session_id)
                 detections = Detections.from_post_detection(request)
-                response = session.track_with_detections(detections)
+                image = None
+                if "image" in request:
+                    try:
+                        image = image_from_base64(image)
+                    except Exception as exc:  # pylint: disable=broad-except
+                        logging.warning("Failed to parse image", exc_info=exc)
+                response = session.track_with_detections(detections, image)
 
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "application/json")
