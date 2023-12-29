@@ -166,7 +166,9 @@ Response:
 ```
 
 - `tracked_boxes` is a list of tracked bounding boxes, each box is a list of `[cx, cy, w, h, score, label, tracker_id]`.
+
 - `filtered_regions` is a dictionary of filtered regions, each region is a list of tracker IDs which bounding boxes inside the region.
+
 - `annotated_image` is base64 encoded annotated image, PNG format.
 
 
