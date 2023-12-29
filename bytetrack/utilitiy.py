@@ -3,13 +3,21 @@ from typing import Tuple, Union, Dict
 import json
 import base64
 
-
 from dataclasses import dataclass
+from functools import cache
 
 import numpy as np
 import cv2
 
+
+from matplotlib import colormaps, colors
 from supervision import Detections, Position
+
+
+@cache
+def color_from_cmap(cmap_name: str):
+    cmap = colormaps[cmap_name]
+    return [colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
 
 
 @dataclass
@@ -33,7 +41,7 @@ class TraceConfig:
 class AnnotationConfig:
     labels: Union[Dict[int, str], Dict]
     bbox_thickness: int = 2
-    bbox_text_scale: float = 0.4
+    bbox_text_scale: float = 0.3
     bbox_text_padding: int = 5
     polygon_thickness: int = 1
     polygon_text_scale: float = 0.3

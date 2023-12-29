@@ -84,7 +84,7 @@ Request body:
             "5": "Truck"
         },
         "bbox_thickness": 2,
-        "bbox_text_scale": 0.4,
+        "bbox_text_scale": 0.3,
         "bbox_text_padding": 5,
         "polygon_thickness": 1,
         "polygon_text_scale": 0.3,
@@ -104,13 +104,23 @@ Request body:
 }
 ```
 
-- `trace_position` can be `CENTER`, `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`.
--
+- `trace_position` and `triggering_position` could be one of the following:
+    - CENTER
+    - CENTER_LEFT
+    - CENTER_RIGHT
+    - TOP_CENTER
+    - TOP_LEFT
+    - TOP_RIGHT
+    - BOTTOM_LEFT
+    - BOTTOM_CENTER
+    - BOTTOM_RIGHT
+
 - `filter_regions` is a dictionary of regions (can be empty), each region is a dictionary of `polygon` and `triggering_position`.
--
-- `polygon` is a list of points, each point is a list of `[x, y]`.
--
-- `triggering_position` can be `CENTER`, `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`.
+
+- `polygon` is a list of points, each point is a list of `[x, y]`, minimum 3 points are required.
+
+- If a session exists already, the request will repleace the existing session with new configurations.
+
 
 ### POST
 

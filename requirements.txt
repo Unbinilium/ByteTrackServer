@@ -2,3 +2,4 @@ supervision
 opencv-python
 numpy
 scipy
+matplotlib

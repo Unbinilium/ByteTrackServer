@@ -103,6 +103,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         image = image_from_base64(image)
                     except Exception as exc:  # pylint: disable=broad-except
                         logging.warning("Failed to parse image", exc_info=exc)
+                        image = None
                 response = session.track_with_detections(detections, image)
 
                 self.send_response(HTTPStatus.OK)
