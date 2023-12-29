@@ -100,7 +100,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 image = None
                 if "image" in request:
                     try:
-                        image = image_from_base64(image)
+                        image = image_from_base64(request["image"])
                     except Exception as exc:  # pylint: disable=broad-except
                         logging.warning("Failed to parse image", exc_info=exc)
                         image = None
