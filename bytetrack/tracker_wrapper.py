@@ -77,7 +77,6 @@ class TrackerWrapper:
             result = {}
             try:
                 detections = self.tracker.update_with_detections(detections)
-                result["tracked_boxes"] = detection_to_tracked_bboxs(detections)
                 result["filtered_regions"] = {
                     region_name: detections.tracker_id[
                         zone.trigger(detections)
@@ -116,6 +115,7 @@ class TrackerWrapper:
                         np.any(traced_annotated_labeled_image[:, :, :3] != 0, axis=-1),
                         3,
                     ] = 255
+                result["tracked_boxes"] = detection_to_tracked_bboxs(detections)
                 result["annotated_image"] = image_to_base64(
                     traced_annotated_labeled_image
                 )
